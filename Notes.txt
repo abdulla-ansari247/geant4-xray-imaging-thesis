@@ -1,0 +1,14 @@
+Non truvaial bone shape  DONE
+Make colometer at detectors and change tube length DONE
+
+Energy cuts at a certain range with the colometer. Relate the energy cut with the length of the colometer
+
+Reconstruction resolution increase
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Change angle of particle gun, create 3 images
+
+Add water elipsis behind bones
+
+Make hole inside bone a circle

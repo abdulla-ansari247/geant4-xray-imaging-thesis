@@ -1,0 +1,33 @@
+# =========================================================
+# vis.mac  (X-ray thesis debug visualization)
+# =========================================================
+
+/vis/open OGL 1200x800-0+0
+#/vis/open OGLSQt
+
+#/vis/open OGLIX
+
+
+# Draw geometry
+/vis/drawVolume
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+
+# Camera controls (good default for source->detector setups)
+/vis/viewer/set/viewpointThetaPhi 70 20
+# /vis/viewer/set/viewpointVector 0 1 0
+/vis/viewer/zoom 1.2
+/vis/viewer/set/autoRefresh true
+/vis/viewer/set/style wireframe
+
+
+# Axes help for thesis screenshots
+/vis/scene/add/axes 0 0 0 20 cm
+
+# Trajectories:
+# Gammas are neutral so lines can be subtle; you mainly see secondaries (e-/e+)
+/tracking/storeTrajectory 1
+/vis/scene/add/trajectories smooth
+
+# Accumulate multiple events so you see the beam cone / scatter
+/vis/scene/endOfEventAction accumulate
