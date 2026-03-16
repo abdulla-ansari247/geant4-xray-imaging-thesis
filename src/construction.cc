@@ -78,20 +78,41 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     auto logicBone1 = new G4LogicalVolume(solidBone1, boneMat, "logicBone1");
     new G4PVPlacement(nullptr, posBone1, logicBone1, "physBone1", logicWorld, false, 0, true);
 
-    // ---------- Bone 2: hollow rectangular (shell via subtraction) ----------
+    // // ---------- Bone 2: hollow rectangular (shell via subtraction) ----------
+    // auto solidBone2Outer = new G4Box("solidBone2Outer", 0.03*m, 0.03*m, 0.003*m);
+
+    // // Inner cavity: leave wall thickness in x/y and keep a little z wall too
+    // // (tweak these to taste; these values make a clear "hollow" but stable shell)
+    // const G4double wallXY = 4.0*mm;     // wall thickness in x/y
+    // const G4double wallZ  = 0.6*mm;     // wall thickness in z
+
+    // auto solidBone2Inner = new G4Box("solidBone2Inner", 0.03*m - wallXY, 0.03*m - wallXY, 0.003*m - wallZ);
+
+    // auto solidBone2 = new G4SubtractionSolid("solidBone2", solidBone2Outer, solidBone2Inner, nullptr, G4ThreeVector(0,0,0)); // centered cavity
+
+    // auto logicBone2 = new G4LogicalVolume(solidBone2, boneMat, "logicBone2");
+    // new G4PVPlacement(nullptr, posBone2, logicBone2, "physBone2", logicWorld, false, 0, true);
+
+    // ---------- Bone 2: hollow rectangular with circular cavity ----------
     auto solidBone2Outer = new G4Box("solidBone2Outer", 0.03*m, 0.03*m, 0.003*m);
 
-    // Inner cavity: leave wall thickness in x/y and keep a little z wall too
-    // (tweak these to taste; these values make a clear "hollow" but stable shell)
-    const G4double wallXY = 4.0*mm;     // wall thickness in x/y
-    const G4double wallZ  = 0.6*mm;     // wall thickness in z
+    // Wall thickness
+    const G4double wallXY = 4.0*mm;
+    const G4double wallZ  = 0.6*mm;
 
-    auto solidBone2Inner = new G4Box("solidBone2Inner", 0.03*m - wallXY, 0.03*m - wallXY, 0.003*m - wallZ);
+    // Radius of circular cavity
+    const G4double cavityRadius = 0.03*m - wallXY;
 
-    auto solidBone2 = new G4SubtractionSolid("solidBone2", solidBone2Outer, solidBone2Inner, nullptr, G4ThreeVector(0,0,0)); // centered cavity
+    // Cylinder cavity (hole through the bone)
+    auto solidBone2Inner = new G4Tubs("solidBone2Inner",0.0,cavityRadius,0.003*m - wallZ,0.0,360.0*deg);
+
+    // Subtract cylinder from box
+    auto solidBone2 = new G4SubtractionSolid("solidBone2",solidBone2Outer,solidBone2Inner,nullptr,G4ThreeVector(0,0,0));
 
     auto logicBone2 = new G4LogicalVolume(solidBone2, boneMat, "logicBone2");
-    new G4PVPlacement(nullptr, posBone2, logicBone2, "physBone2", logicWorld, false, 0, true);
+
+    new G4PVPlacement(nullptr,posBone2,logicBone2,"physBone2",logicWorld,false,0,true);
+
 
     // ---------- Bone 3: Cartoon dog bone (4-lobed symmetric) ----------
     // Common thickness (6 mm total)
@@ -115,6 +136,32 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     new G4PVPlacement(nullptr, posBone3, logicBone3, "physBone3", logicWorld, false, 0, true);
 
 
+    // Water drop behind each bone
+    G4Material *tumorMat = nist->FindOrBuildMaterial("G4_WATER");
+
+    const G4double xTumor = 4*mm;
+    const G4double yTumor = 6*mm;
+    const G4double zTumor = 3*mm;
+    const G4double tumorOffset = zTumor + 3.0*mm;
+
+    const G4ThreeVector posTumor1 = posBone1 + G4ThreeVector(0,0,tumorOffset);
+    const G4ThreeVector posTumor2 = posBone2 + G4ThreeVector(0,0,tumorOffset);
+    const G4ThreeVector posTumor3 = posBone3 + G4ThreeVector(0,0,tumorOffset);
+
+
+    auto solidTumor1 = new G4Ellipsoid("solidTumor1", xTumor, yTumor, zTumor);
+    auto logicTumor1 = new G4LogicalVolume(solidTumor1, tumorMat, "logicTumor1");
+    new G4PVPlacement(nullptr, posTumor1, logicTumor1, "physTumor1", logicWorld, false, 0, true);
+
+    auto solidTumor2 = new G4Ellipsoid("solidTumor2", xTumor, yTumor, zTumor);
+    auto logicTumor2 = new G4LogicalVolume(solidTumor2, tumorMat, "logicTumor2");
+    new G4PVPlacement(nullptr, posTumor2, logicTumor2, "physTumor2", logicWorld, false, 0, true);
+
+    auto solidTumor3 = new G4Ellipsoid("solidTumor3", xTumor, yTumor, zTumor);
+    auto logicTumor3 = new G4LogicalVolume(solidTumor3, tumorMat, "logicTumor3");
+    new G4PVPlacement(nullptr, posTumor3, logicTumor3, "physTumor3", logicWorld, false, 0, true);
+
+
     // ---------- Visualization ----------
     auto bone1Vis = new G4VisAttributes(G4Colour(1.0, 1.0, 0.8, 0.6));
     bone1Vis->SetForceSolid(true);
@@ -127,6 +174,16 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     auto bone3Vis = new G4VisAttributes(G4Colour(1.0, 0.9, 0.7, 0.7)); // warmer tint
     bone3Vis->SetForceSolid(true);
     logicBone3->SetVisAttributes(bone3Vis);
+
+    // Visualization: tumors blue
+    G4VisAttributes* tumorVis = new G4VisAttributes(G4Colour(0.2, 0.4, 1.0));
+    tumorVis->SetVisibility(true);
+    tumorVis->SetForceSolid(true);
+
+    logicTumor1->SetVisAttributes(tumorVis);
+    logicTumor2->SetVisAttributes(tumorVis);
+    logicTumor3->SetVisAttributes(tumorVis);
+
 
     // // Sensitive detector
     G4Material *detectorMat = nist->FindOrBuildMaterial("G4_Pb"); 

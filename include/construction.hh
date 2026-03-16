@@ -14,6 +14,7 @@
 #include "G4Ellipsoid.hh"
 #include "G4UnionSolid.hh"
 #include "G4Tubs.hh"
+#include "G4Orb.hh"
 
 #include "detector.hh"
 

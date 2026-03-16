@@ -5,6 +5,12 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
+# optimize files
+Optimize?/
+MyRunMessenger.hh
+MyRunMessenger.cc
+
+
 # compiled objects
 *.o
 *.so

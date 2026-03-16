@@ -1,3 +1,5 @@
+/sim/notify true
+
 /control/execute init.mac
 /run/printProgress 10000
-/run/beamOn 2000000
+/run/beamOn 5000000
