@@ -25,4 +25,4 @@ make
 
 ## Run
 
-./simulation run.mac
+./sim
