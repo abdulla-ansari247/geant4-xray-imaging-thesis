@@ -1,0 +1,26 @@
+# Tomosynthesis acquisition: 3 angular positions in the Y-Z plane.
+#   0 deg  = frontal (standard PA view)
+#  +30 deg = source up (+Y), beam tilted downward
+#  -30 deg = source down (-Y), beam tilted upward
+#
+# Run from build/: ./sim tomo.mac
+# Output files land in the project root (one level above build/).
+
+/sim/notify true
+/control/execute init.mac
+/run/printProgress 100000
+
+# --- Shot 1: frontal (0 degrees) ---
+/gun/angleY 0 deg
+/sim/outputFile ../results/raw/xray_image_0deg.dat
+/run/beamOn 1000000
+
+# --- Shot 2: source up (+30 degrees) ---
+/gun/angleY 30 deg
+/sim/outputFile ../results/raw/xray_image_+30deg.dat
+/run/beamOn 1000000
+
+# --- Shot 3: source down (-30 degrees) ---
+/gun/angleY -30 deg
+/sim/outputFile ../results/raw/xray_image_-30deg.dat
+/run/beamOn 1000000

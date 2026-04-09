@@ -21,9 +21,13 @@ public:
     G4int GetNy() const { return fNy; }
     G4double GetPixel(G4int ix, G4int iy) const { return fImage[ix][iy]; }
 
+    // Set the output file path written by EndOfRun (default: ../xray_image.dat)
+    void SetOutputFile(const G4String& path) { fOutputFile = path; }
+
 private:
     G4int fNx, fNy;
     std::vector<std::vector<G4double>> fImage;  // deposited energy per pixel
+    G4String fOutputFile = "../results/raw/xray_image.dat";
 };
 
 #endif

@@ -10,6 +10,9 @@ Optimize?/
 MyRunMessenger.hh
 MyRunMessenger.cc
 
+# results
+results/
+Notes.txt
 
 # compiled objects
 *.o

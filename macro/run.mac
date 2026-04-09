@@ -2,4 +2,4 @@
 
 /control/execute init.mac
 /run/printProgress 10000
-/run/beamOn 5000000
+/run/beamOn 1000000

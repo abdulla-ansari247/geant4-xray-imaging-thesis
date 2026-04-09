@@ -1,4 +1,5 @@
 #include "generator.hh"
+#include "MyGeneratorMessenger.hh"
 
 MyPrimaryGenerator::MyPrimaryGenerator()
 {
@@ -6,43 +7,28 @@ MyPrimaryGenerator::MyPrimaryGenerator()
     auto* particleTable = G4ParticleTable::GetParticleTable();
     auto* gamma = particleTable->FindParticle("gamma");
     fParticleGun->SetParticleDefinition(gamma);
+
+    fMessenger = new MyGeneratorMessenger(this);
 }
 
 MyPrimaryGenerator::~MyPrimaryGenerator()
 {
+    delete fMessenger;
     delete fParticleGun;
 }
 
 void MyPrimaryGenerator::GeneratePrimaries(G4Event* event)
 {
-    // Base focal spot position (disk at z=fZsource)
-    G4ThreeVector baseSrc = SampleFocalSpot();
+    // Sample focal spot position on the tilted disk at the current gun angle.
+    const G4ThreeVector src = SampleFocalSpot();
 
-    // Three "guns": center, up, down (shift in y)
-    G4ThreeVector srcCenter = baseSrc;
-    G4ThreeVector srcUp     = baseSrc + G4ThreeVector(0, +fYOffset, 0);
-    G4ThreeVector srcDown   = baseSrc + G4ThreeVector(0, -fYOffset, 0);
+    G4double energy = SampleKramersEnergy();
+    G4ThreeVector dir = DirectionToRandomDetectorPoint(src).unit();
 
-    // const G4ThreeVector sources[3] = { srcCenter, srcUp, srcDown };
-    const G4ThreeVector sources[1] = { srcCenter };
-
-
-    for (const auto& src : sources)
-    {
-        // Energy: sample Kramers spectrum
-        G4double energy = SampleKramersEnergy(); // Monoenergetic
-
-        // Direction: aim at the subject (isocenter)
-        G4ThreeVector dir = DirectionToRandomDetectorPoint(src).unit();
-
-        // Configure gun
-        fParticleGun->SetParticlePosition(src);
-        fParticleGun->SetParticleMomentumDirection(dir);
-        fParticleGun->SetParticleEnergy(energy);
-
-        // Shoot (adds a primary vertex to the same event)
-        fParticleGun->GeneratePrimaryVertex(event);
-    }
+    fParticleGun->SetParticlePosition(src);
+    fParticleGun->SetParticleMomentumDirection(dir);
+    fParticleGun->SetParticleEnergy(energy);
+    fParticleGun->GeneratePrimaryVertex(event);
 }
 
 
@@ -66,23 +52,41 @@ G4double MyPrimaryGenerator::SampleKramersEnergy() const
 
 G4ThreeVector MyPrimaryGenerator::SampleFocalSpot() const
 {
-    // polar method for uniform disk
+    // Source centre on an arc of radius fSID, rotated by fGunAngleY around x-axis.
+    //   +angle -> source moves to +Y, beam aimed downward toward isocenter.
+    //   -angle -> source moves to -Y, beam aimed upward.
+    const G4double sinA = std::sin(fGunAngleY);
+    const G4double cosA = std::cos(fGunAngleY);
+
+    const G4ThreeVector srcCenter(0.0, fSID * sinA, -fSID * cosA);
+
+    // Focal spot: uniform disk perpendicular to the beam axis.
+    // Beam axis (toward isocenter): n = (0, -sinA, cosA)
+    // In-plane basis:  u = (1, 0, 0),  v = n x u = (0, cosA, sinA)
     const G4double r = fSpotR * std::sqrt(G4UniformRand());
-    const G4double a = 2.0 * CLHEP::pi * G4UniformRand();
-    const G4double x = r * std::cos(a);
-    const G4double y = r * std::sin(a);
-    return G4ThreeVector(x, y, fZsource);
+    const G4double phi = 2.0 * CLHEP::pi * G4UniformRand();
+
+    const G4double du = r * std::cos(phi);   // along u = (1,0,0)
+    const G4double dv = r * std::sin(phi);   // along v = (0, cosA, sinA)
+
+    return G4ThreeVector(
+        srcCenter.x() + du,
+        srcCenter.y() + dv * cosA,
+        srcCenter.z() + dv * sinA
+    );
 }
 
 G4ThreeVector MyPrimaryGenerator::DirectionToRandomDetectorPoint(const G4ThreeVector& src) const
 {
-    const G4double x = (2.0 * G4UniformRand() - 1.0) * fHalfX;
-    const G4double y = (2.0 * G4UniformRand() - 1.0) * fHalfY;
+    // The central ray passes through the isocenter (0,0,0).
+    // From focal spot src, the ray through the isocenter hits the detector at (xc, yc).
+    // The beam then fans out ±fHalfX/fHalfY around that central point.
+    const G4double xc = src.x() * fZdet / src.z();
+    const G4double yc = src.y() * fZdet / src.z();
+
+    const G4double x = xc + (2.0 * G4UniformRand() - 1.0) * fHalfX;
+    const G4double y = yc + (2.0 * G4UniformRand() - 1.0) * fHalfY;
     const G4double z = fZdet;
     return G4ThreeVector(x - src.x(), y - src.y(), z - src.z());
 }
 
-G4ThreeVector MyPrimaryGenerator::AimAtIsocenter(const G4ThreeVector& src) const
-{
-    return (fIsocenter - src).unit();
-}

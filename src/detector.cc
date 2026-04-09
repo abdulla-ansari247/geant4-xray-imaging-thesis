@@ -56,7 +56,7 @@ void MySensitiveDetector::EndOfEvent(G4HCofThisEvent*)
 
 void MySensitiveDetector::EndOfRun(const G4Run*)
 {
-    std::ofstream outFile("../xray_image.dat", std::ios::trunc);
+    std::ofstream outFile(fOutputFile, std::ios::trunc);
 
     for (int iy = 0; iy < fNy; iy++) {
         for (int ix = 0; ix < fNx; ix++) {
@@ -72,5 +72,5 @@ void MySensitiveDetector::EndOfRun(const G4Run*)
         std::fill(fImage[ix].begin(), fImage[ix].end(), 0.0);
     }
 
-    G4cout << ">>> Wrote xray_image.dat" << G4endl;
+    G4cout << ">>> Wrote " << fOutputFile << G4endl;
 }

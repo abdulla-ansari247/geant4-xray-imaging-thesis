@@ -241,7 +241,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
             const G4double y = y0 + iy*pitch;
             
             // Collimator cell
-            new G4PVPlacement(0, G4ThreeVector(x, y, zCol), logicColCell, "physColCell", logicWorld, false, ix + iy*Nx, true);
+            // new G4PVPlacement(0, G4ThreeVector(x, y, zCol), logicColCell, "physColCell", logicWorld, false, ix + iy*Nx, true);
 
             // Detector pixel
             new G4PVPlacement(0, G4ThreeVector(x, y, zDet), logicDetector, "physDetector", logicWorld, false, ix + iy*Nx, true);
