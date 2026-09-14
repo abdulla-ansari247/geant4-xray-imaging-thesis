@@ -32,7 +32,7 @@ void MyRunAction::EndOfRunAction(const G4Run*)
     if (fSendNotification) {
         G4cout << "Sending notification..." << G4endl;
 
-        int ret = system("python3 /home/abdulla-ansari/Desktop/Thesis/Xray_Sim/Optimize?/notifyMe.py");
+        int ret = system("python3 /home/abdulla-ansari/Desktop/University/Thesis/Xray_Sim/Optimize?/notifyMe.py");
 
         if (ret != 0) {
             G4cout << "Notification script failed." << G4endl;

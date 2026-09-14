@@ -140,7 +140,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     G4Material *tumorMat = nist->FindOrBuildMaterial("G4_WATER");
 
     const G4double xTumor = 4*mm;
-    const G4double yTumor = 6*mm;
+    const G4double yTumor = 8*mm;        // was 6mm
     const G4double zTumor = 3*mm;
     const G4double tumorOffset = zTumor + 3.0*mm;
 
@@ -201,6 +201,8 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
     G4Box* solidDetector = new G4Box("solidDetector", 0.5*pixelXY, 0.5*pixelXY, 0.5*pixelThick);
     logicDetector = new G4LogicalVolume(solidDetector, detectorMat, "logicalDetector");
+    logicDetector->SetVisAttributes(G4VisAttributes::GetInvisible());
+
 
     // Collimator set up
     const G4double colPitch = pixelXY;

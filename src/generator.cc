@@ -81,8 +81,14 @@ G4ThreeVector MyPrimaryGenerator::DirectionToRandomDetectorPoint(const G4ThreeVe
     // The central ray passes through the isocenter (0,0,0).
     // From focal spot src, the ray through the isocenter hits the detector at (xc, yc).
     // The beam then fans out ±fHalfX/fHalfY around that central point.
-    const G4double xc = src.x() * fZdet / src.z();
-    const G4double yc = src.y() * fZdet / src.z();
+
+    // For gun tilt
+    // const G4double xc = src.x() * fZdet / src.z();
+    // const G4double yc = src.y() * fZdet / src.z();
+
+    // You'd use this (no tilt — always aims at detector centre):                                                                                                                                             
+    const G4double xc = 0.0;                              
+    const G4double yc = 0.0; 
 
     const G4double x = xc + (2.0 * G4UniformRand() - 1.0) * fHalfX;
     const G4double y = yc + (2.0 * G4UniformRand() - 1.0) * fHalfY;

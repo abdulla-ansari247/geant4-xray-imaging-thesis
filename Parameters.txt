@@ -1,0 +1,123 @@
+================================================================================
+  SIMULATION PARAMETERS — Xray_Sim (Geant4 Tomosynthesis)
+================================================================================
+
+--------------------------------------------------------------------------------
+WORLD
+--------------------------------------------------------------------------------
+  Material          : G4_AIR
+  Half-dimensions   : 0.25 m x 0.25 m x 0.25 m  (50 cm cube)
+
+--------------------------------------------------------------------------------
+X-RAY SOURCE  (generator.cc / generator.hh)
+--------------------------------------------------------------------------------
+  Particle          : gamma (1 per event)
+  Energy spectrum   : Kramers bremsstrahlung
+    Emin            : 15 keV
+    Emax            : 80 keV  (tube kVp)
+  Focal spot radius : 0.5 mm  (uniform disk, perpendicular to beam axis)
+  Source-isocenter
+    distance (SID)  : 0.15 m  (15 cm)
+  Isocenter         : (0, 0, 0)
+  Beam half-field   : ±0.245 m in X and Y  (≈ 49 cm active field width)
+  Gun angle (Y-Z)   : set per run (see Tomosynthesis Runs below)
+
+--------------------------------------------------------------------------------
+PHANTOM
+--------------------------------------------------------------------------------
+  LUNG TISSUE SLAB  ("Meat")
+    Material        : LungInhale (custom)
+      Density       : 0.217 g/cm³
+      Composition   : H 10.3%, C 10.5%, N 3.1%, O 74.9%,
+                      Na 0.2%, P 0.2%, S 0.3%, Cl 0.2%, K 0.3%
+    Half-dimensions : 0.1 m x 0.1 m x 0.025 m  (20 x 20 x 5 cm)
+    Position (z)    : +0.05 m
+
+  BONE 1  (solid rectangular)
+    Material        : G4_BONE_COMPACT_ICRU
+    Half-dimensions : 0.03 m x 0.03 m x 0.003 m  (6 x 6 x 0.6 cm)
+    Position        : (-0.062 m, 0, 0.08 m)
+
+  BONE 2  (hollow — cylindrical cavity)
+    Material        : G4_BONE_COMPACT_ICRU
+    Outer box       : 0.03 m x 0.03 m x 0.003 m
+    Wall thickness  : 4 mm (XY),  0.6 mm (Z)
+    Cavity radius   : 0.026 m  (cylinder, coaxial)
+    Position        : (0, 0, 0.08 m)
+
+  BONE 3  (dog-bone / 4-lobe)
+    Material        : G4_BONE_COMPACT_ICRU
+    Shaft half-len  : 23 mm (X),  6 mm (Y),  3 mm (Z half-thickness)
+    Lobe radius     : 7 mm  (4 lobes at ±X ends, ±Y offsets)
+    Position        : (+0.062 m, 0, 0.08 m)
+
+  Bone pitch / gap  : 2 × 0.03 m + 2 mm gap = 0.062 m  (centre-to-centre)
+  Bone z-position   : 0.08 m  (all three)
+
+  WATER TUMORS  (ellipsoids, one behind each bone)
+    Material        : G4_WATER
+    Semi-axes       : 4 mm (X),  6 mm (Y),  3 mm (Z)
+    Z-offset from
+      bone centre   : zBone + 0.003 m + 3 mm = zBone + 6 mm
+    Positions       :
+      Tumor 1       : (-0.062 m, 0, 0.086 m)
+      Tumor 2       : (0,        0, 0.086 m)
+      Tumor 3       : (+0.062 m, 0, 0.086 m)
+
+--------------------------------------------------------------------------------
+DETECTOR  (construction.cc / detector.cc)
+--------------------------------------------------------------------------------
+  Material          : G4_Pb
+  Pixel size (XY)   : 5 mm x 5 mm
+  Pixel thickness   : 0.5 mm
+  Array size        : 80 x 80 pixels
+  Active area       : 400 mm x 400 mm  (40 x 40 cm)
+  Detector plane z  : 0.240 m
+  Pixel pitch       : 5 mm  (contiguous, no gap)
+  Panel centre      : (0, 0)
+  Output            : energy deposited per pixel (eV), written to .dat file
+
+  COLLIMATOR (defined but currently disabled in placement loop)
+    Material        : G4_Pb  (septa),  G4_AIR  (holes)
+    Cell pitch      : 5 mm  (matches pixel pitch)
+    Hole XY         : 4 mm x 4 mm
+    Cell length (Z) : 5 mm
+    Z position      : zDet − 0.25 mm − 2.5 mm = 0.2375 m
+    Status          : DISABLED (placement line commented out)
+
+--------------------------------------------------------------------------------
+PHYSICS  (physics.cc)
+--------------------------------------------------------------------------------
+  EM model          : G4EmLivermorePhysics  (low-energy EM)
+  Optical           : G4OpticalPhysics
+  Default cut       : 0.01 mm  (tighter cuts for low-energy photons)
+
+--------------------------------------------------------------------------------
+RUN SETTINGS  (macro/init.mac)
+--------------------------------------------------------------------------------
+  Verbosity         : control=1, run=1, event=0, tracking=0
+  Random seeds      : 12345, 67890
+
+--------------------------------------------------------------------------------
+TOMOSYNTHESIS RUNS  (macro/tomo.mac)
+--------------------------------------------------------------------------------
+  Events per run    : 1,000,000
+  Print progress    : every 100,000 events
+
+  Shot 1 — Frontal
+    Gun angle       : 0 deg
+    Output file     : results/raw/xray_image_0deg.dat
+
+  Shot 2 — Source up
+    Gun angle       : +30 deg
+    Output file     : results/raw/xray_image_+30deg.dat
+
+  Shot 3 — Source down
+    Gun angle       : -30 deg
+    Output file     : results/raw/xray_image_-30deg.dat
+
+SINGLE RUN  (macro/run.mac)
+  Events            : 1,000,000
+  Print progress    : every 10,000 events
+
+================================================================================
