@@ -140,8 +140,8 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     G4Material *tumorMat = nist->FindOrBuildMaterial("G4_WATER");
 
     const G4double xTumor = 4*mm;
-    const G4double yTumor = 8*mm;        // was 6mm
-    const G4double zTumor = 3*mm;
+    const G4double yTumor = 14*mm;        // was 6mm
+    const G4double zTumor = 6*mm;
     const G4double tumorOffset = zTumor + 3.0*mm;
 
     const G4ThreeVector posTumor1 = posBone1 + G4ThreeVector(0,0,tumorOffset);
