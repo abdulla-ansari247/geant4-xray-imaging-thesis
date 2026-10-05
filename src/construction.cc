@@ -22,6 +22,13 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     // G4LogicalVolume *logicMeat = new G4LogicalVolume(solidMeat, softTissue, "logicMeat");
     // G4VPhysicalVolume *physMeat = new G4PVPlacement(0, G4ThreeVector(0,0,0.05*m), logicMeat, "physMeat", logicWorld, false, 0);
 
+    // Skin (thin layer in front, where the lung used to start)
+    G4Material *skinMat = nist->FindOrBuildMaterial("G4_SKIN_ICRP");
+    const G4double skinHalfZ = 1.0*mm;                                   // 2 mm thick
+    G4Box *solidSkin = new G4Box("solidSkin", 0.1*m, 0.1*m, skinHalfZ);   // 20x20x0.2 cm
+    G4LogicalVolume *logicSkin = new G4LogicalVolume(solidSkin, skinMat, "logicSkin");
+    new G4PVPlacement(0, G4ThreeVector(0,0,0.05*m), logicSkin, "physSkin", logicWorld, false, 0, true);
+
     //  Lung Inhale material
     // Materials
     G4Element *elH  = nist->FindOrBuildElement("H");
@@ -45,10 +52,6 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     lunginhale->AddElement(elS, 0.003);
     lunginhale->AddElement(elCl, 0.002);
     lunginhale->AddElement(elK, 0.003);
-
-    G4Box *solidMeat = new G4Box("solidMeat", 0.1*m, 0.1*m, 0.025*m); // 20x20x5 cm
-    G4LogicalVolume *logicMeat = new G4LogicalVolume(solidMeat, lunginhale, "logicMeat");
-    G4VPhysicalVolume *physMeat = new G4PVPlacement(0, G4ThreeVector(0,0,0.05*m), logicMeat, "physMeat", logicWorld, false, 0);
 
     // // Bone slab (behind meat) (ORIGINAL)
     // G4Material *bone = nist->FindOrBuildMaterial("G4_BONE_COMPACT_ICRU");
@@ -162,6 +165,14 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     new G4PVPlacement(nullptr, posTumor3, logicTumor3, "physTumor3", logicWorld, false, 0, true);
 
 
+    // Lung slab (behind the bones and tumors)
+    const G4double lungHalfZ = 0.025*m;
+    const G4double zLung = posTumor1.z() + zTumor + lungHalfZ;      // front face touches back of tumors (z = 95 mm)
+    G4Box *solidLung = new G4Box("solidLung", 0.1*m, 0.1*m, lungHalfZ); // 20x20x5 cm
+    G4LogicalVolume *logicLung = new G4LogicalVolume(solidLung, lunginhale, "logicLung");
+    new G4PVPlacement(0, G4ThreeVector(0,0,zLung), logicLung, "physLung", logicWorld, false, 0, true);
+
+
     // ---------- Visualization ----------
     auto bone1Vis = new G4VisAttributes(G4Colour(1.0, 1.0, 0.8, 0.6));
     bone1Vis->SetForceSolid(true);
@@ -251,10 +262,14 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     }
 
 
-    // Adding colour to bone and meat
-    G4VisAttributes* meatVis = new G4VisAttributes(G4Colour(1.0, 0.6, 0.6, 0.3)); // pinkish, transparent
-    meatVis->SetForceSolid(true);
-    logicMeat->SetVisAttributes(meatVis);
+    // Adding colour to skin, lung and bone
+    G4VisAttributes* skinVis = new G4VisAttributes(G4Colour(0.9, 0.7, 0.5, 0.4)); // tan, transparent
+    skinVis->SetForceSolid(true);
+    logicSkin->SetVisAttributes(skinVis);
+
+    G4VisAttributes* lungVis = new G4VisAttributes(G4Colour(1.0, 0.6, 0.6, 0.3)); // pinkish, transparent
+    lungVis->SetForceSolid(true);
+    logicLung->SetVisAttributes(lungVis);
 
     G4VisAttributes* boneVis = new G4VisAttributes(G4Colour(1.0, 1.0, 0.8, 0.6)); // ivory, semi-transparent
     boneVis->SetForceSolid(true);
