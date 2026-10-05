@@ -116,6 +116,11 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
     new G4PVPlacement(nullptr,posBone2,logicBone2,"physBone2",logicWorld,false,0,true);
 
+    // Fill the cavity with water (same shape/position as the subtracted cylinder)
+    G4Material *cavityMat = nist->FindOrBuildMaterial("G4_WATER");
+    auto logicBone2Cavity = new G4LogicalVolume(solidBone2Inner, cavityMat, "logicBone2Cavity");
+    new G4PVPlacement(nullptr,posBone2,logicBone2Cavity,"physBone2Cavity",logicWorld,false,0,true);
+
 
     // ---------- Bone 3: Cartoon dog bone (4-lobed symmetric) ----------
     // Common thickness (6 mm total)
@@ -143,7 +148,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     G4Material *tumorMat = nist->FindOrBuildMaterial("G4_WATER");
 
     const G4double xTumor = 4*mm;
-    const G4double yTumor = 14*mm;        // was 6mm
+    const G4double yTumor = 4*mm;        // was 6mm
     const G4double zTumor = 6*mm;
     const G4double tumorOffset = zTumor + 3.0*mm;
 
@@ -181,6 +186,10 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     auto bone2Vis = new G4VisAttributes(G4Colour(0.9, 0.95, 1.0, 0.6)); // slightly bluish tint
     bone2Vis->SetForceSolid(true);
     logicBone2->SetVisAttributes(bone2Vis);
+
+    auto cavityVis = new G4VisAttributes(G4Colour(0.3, 0.6, 1.0, 0.5)); // water, light blue
+    cavityVis->SetForceSolid(true);
+    logicBone2Cavity->SetVisAttributes(cavityVis);
 
     auto bone3Vis = new G4VisAttributes(G4Colour(1.0, 0.9, 0.7, 0.7)); // warmer tint
     bone3Vis->SetForceSolid(true);
