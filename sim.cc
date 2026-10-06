@@ -76,6 +76,8 @@
 #include "physics.hh"
 #include "action.hh"
 
+#include <chrono>
+
 int main(int argc, char** argv)
 {
     // --- Run manager
@@ -115,7 +117,15 @@ int main(int argc, char** argv)
         // Batch mode: execute macro passed as argv[1]
         // Accept "run.mac" or "macro/run.mac" etc.
         G4String macroFile = argv[1];
+
+        const auto tStart = std::chrono::steady_clock::now();
         UImanager->ApplyCommand(G4String("/control/execute ") + macroFile);
+        const auto tEnd = std::chrono::steady_clock::now();
+
+        // Total wall-clock time for the whole macro (all runs in it)
+        const long total = std::chrono::duration_cast<std::chrono::seconds>(tEnd - tStart).count();
+        G4cout << ">>> Simulation time: "
+               << total / 3600 << " h " << (total % 3600) / 60 << " min " << total % 60 << " s" << G4endl;
     }
 
     delete runManager;
