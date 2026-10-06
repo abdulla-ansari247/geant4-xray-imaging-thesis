@@ -69,6 +69,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
     // Spacing: bone full width is 0.06 m, add 2 mm gap
     const G4double boneHalfX = 0.03*m;
+    const G4double boneHalfZ = 7.5*mm;          // 15 mm thick (was 3 mm -> 6 mm)
     const G4double gap = 2.0*mm;
     const G4double dx = 2.0*boneHalfX + gap;   // 0.062 m
 
@@ -77,7 +78,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     const G4ThreeVector posBone3(+dx, 0, zBone);
 
     // ---------- Bone 1: normal rectangular ----------
-    auto solidBone1 = new G4Box("solidBone1", 0.03*m, 0.03*m, 0.003*m); // 6x6x0.6 cm
+    auto solidBone1 = new G4Box("solidBone1", 0.03*m, 0.03*m, boneHalfZ); // 6x6x1.5 cm
     auto logicBone1 = new G4LogicalVolume(solidBone1, boneMat, "logicBone1");
     new G4PVPlacement(nullptr, posBone1, logicBone1, "physBone1", logicWorld, false, 0, true);
 
@@ -97,7 +98,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     // new G4PVPlacement(nullptr, posBone2, logicBone2, "physBone2", logicWorld, false, 0, true);
 
     // ---------- Bone 2: hollow rectangular with circular cavity ----------
-    auto solidBone2Outer = new G4Box("solidBone2Outer", 0.03*m, 0.03*m, 0.003*m);
+    auto solidBone2Outer = new G4Box("solidBone2Outer", 0.03*m, 0.03*m, boneHalfZ);
 
     // Wall thickness
     const G4double wallXY = 4.0*mm;
@@ -107,7 +108,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     const G4double cavityRadius = 0.03*m - wallXY;
 
     // Cylinder cavity (hole through the bone)
-    auto solidBone2Inner = new G4Tubs("solidBone2Inner",0.0,cavityRadius,0.003*m - wallZ,0.0,360.0*deg);
+    auto solidBone2Inner = new G4Tubs("solidBone2Inner",0.0,cavityRadius,boneHalfZ - wallZ,0.0,360.0*deg);
 
     // Subtract cylinder from box
     auto solidBone2 = new G4SubtractionSolid("solidBone2",solidBone2Outer,solidBone2Inner,nullptr,G4ThreeVector(0,0,0));
@@ -123,8 +124,8 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
 
     // ---------- Bone 3: Cartoon dog bone (4-lobed symmetric) ----------
-    // Common thickness (6 mm total)
-    const G4double hz = 3.0*mm;
+    // Common thickness (15 mm total)
+    const G4double hz = boneHalfZ;
     const G4double halfLenX = 23.0*mm;
     const G4double lobeRadius = 7.0*mm;
 
@@ -150,7 +151,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     const G4double xTumor = 4*mm;
     const G4double yTumor = 4*mm;        // was 6mm
     const G4double zTumor = 6*mm;
-    const G4double tumorOffset = zTumor + 3.0*mm;
+    const G4double tumorOffset = zTumor + boneHalfZ;
 
     const G4ThreeVector posTumor1 = posBone1 + G4ThreeVector(0,0,tumorOffset);
     const G4ThreeVector posTumor2 = posBone2 + G4ThreeVector(0,0,tumorOffset);
@@ -172,7 +173,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
     // Lung slab (behind the bones and tumors)
     const G4double lungHalfZ = 0.025*m;
-    const G4double zLung = posTumor1.z() + zTumor + lungHalfZ;      // front face touches back of tumors (z = 95 mm)
+    const G4double zLung = posTumor1.z() + zTumor + lungHalfZ;      // front face touches back of tumors (z = 99.5 mm)
     G4Box *solidLung = new G4Box("solidLung", 0.1*m, 0.1*m, lungHalfZ); // 20x20x5 cm
     G4LogicalVolume *logicLung = new G4LogicalVolume(solidLung, lunginhale, "logicLung");
     new G4PVPlacement(0, G4ThreeVector(0,0,zLung), logicLung, "physLung", logicWorld, false, 0, true);
@@ -216,7 +217,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     // G4Material* detectorMat = nist->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
 
     // Pixel size (5 mm x 5 mm) and thickness (0.5 mm)
-    const G4double pixelXY = 5.0*mm;
+    const G4double pixelXY = 2.5*mm;                    // was 5.0*mm
     const G4double pixelThick = 0.5*mm;
 
     G4Box* solidDetector = new G4Box("solidDetector", 0.5*pixelXY, 0.5*pixelXY, 0.5*pixelThick);
@@ -243,8 +244,8 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     logicColCell->SetVisAttributes(colVis);
 
 
-    const G4int Nx = 80;
-    const G4int Ny = 80;
+    const G4int Nx = 160;            // was 80
+    const G4int Ny = 160;
 
     const G4double pitch = pixelXY;        // contiguous pixels
     const G4double zDet  = 0.240*m;        // your detector plane
@@ -291,7 +292,7 @@ void MyDetectorConstruction::ConstructSDandField()
 {
     auto* sdManager = G4SDManager::GetSDMpointer();
 
-    auto* sensDet = new MySensitiveDetector("SensitiveDetector", 80, 80);
+    auto* sensDet = new MySensitiveDetector("SensitiveDetector", 160, 160);
 
     sdManager->AddNewDetector(sensDet);            // register with SD manager
     logicDetector->SetSensitiveDetector(sensDet);  // attach to logical volume
