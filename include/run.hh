@@ -40,6 +40,7 @@ public:
     ~MyRunAction();
 
     void SetNotification(G4bool val);
+    void SendNotification(const G4String& simTime) const;   // called from sim.cc once the macro finishes
 
     virtual void EndOfRunAction(const G4Run*) override;
 

@@ -28,14 +28,18 @@ void MyRunAction::EndOfRunAction(const G4Run*)
     if (mySD) {
         mySD->EndOfRun(nullptr);   // flush file
     }
+}
 
-    if (fSendNotification) {
-        G4cout << "Sending notification..." << G4endl;
+void MyRunAction::SendNotification(const G4String& simTime) const
+{
+    if (!fSendNotification) return;
 
-        int ret = system("python3 /home/abdulla-ansari/Desktop/University/Thesis/Xray_Sim/Optimize?/notifyMe.py");
+    G4cout << "Sending notification..." << G4endl;
 
-        if (ret != 0) {
-            G4cout << "Notification script failed." << G4endl;
-        }
+    const G4String cmd = "python3 \"/home/abdulla-ansari/Desktop/University/Thesis/Xray_Sim/Optimize?/notifyMe.py\" \"" + simTime + "\"";
+    int ret = system(cmd.c_str());
+
+    if (ret != 0) {
+        G4cout << "Notification script failed." << G4endl;
     }
 }

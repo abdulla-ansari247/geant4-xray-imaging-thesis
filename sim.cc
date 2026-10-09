@@ -74,6 +74,7 @@
 
 #include "construction.hh"
 #include "physics.hh"
+#include "run.hh"
 #include "action.hh"
 
 #include <chrono>
@@ -124,8 +125,12 @@ int main(int argc, char** argv)
 
         // Total wall-clock time for the whole macro (all runs in it)
         const long total = std::chrono::duration_cast<std::chrono::seconds>(tEnd - tStart).count();
-        G4cout << ">>> Simulation time: "
-               << total / 3600 << " h " << (total % 3600) / 60 << " min " << total % 60 << " s" << G4endl;
+        const G4String simTime = std::to_string(total / 3600) + " h " + std::to_string((total % 3600) / 60) + " min " + std::to_string(total % 60) + " s";
+        G4cout << ">>> Simulation time: " << simTime << G4endl;
+
+        // Telegram notification (only if /sim/notify true was set in the macro)
+        if (auto* runAction = dynamic_cast<const MyRunAction*>(runManager->GetUserRunAction()))
+            runAction->SendNotification(simTime);
     }
 
     delete runManager;

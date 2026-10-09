@@ -1,14 +1,6 @@
-Non truvaial bone shape  DONE
-Make colometer at detectors and change tube length DONE
+Increase detector screen (try adjusting only after seeing tumor, be careful of the angle being too high)
+5x shots at 10m runs making tomography (angle gun)
+Make everything a bit closer
 
-Energy cuts at a certain range with the colometer. Relate the energy cut with the length of the colometer
 
-Reconstruction resolution increase
-
----------------------------------------------------------------------------------------------------------------------------
-
-Change angle of particle gun, create 3 images
-
-Add water elipsis behind bones
-
-Make hole inside bone a circle
+Email him with pictures
