@@ -171,6 +171,39 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     new G4PVPlacement(nullptr, posTumor3, logicTumor3, "physTumor3", logicWorld, false, 0, true);
 
 
+    // ===== Small bones (3 above the main bones, same thickness) =====
+    const G4double smallBoneHalfX = 10.0*mm;    // 20 mm wide (x)
+    const G4double smallBoneHalfY = 5.0*mm;     // 10 mm tall (y) -> tumor "width" reference
+    const G4double ySmallBone = 45.0*mm;        // main bones end at y = 30 mm
+
+    const G4ThreeVector posSmallBone1(-dx, ySmallBone, zBone);
+    const G4ThreeVector posSmallBone2( 0 , ySmallBone, zBone);
+    const G4ThreeVector posSmallBone3(+dx, ySmallBone, zBone);
+
+    auto solidSmallBone = new G4Box("solidSmallBone", smallBoneHalfX, smallBoneHalfY, boneHalfZ);
+    auto logicSmallBone = new G4LogicalVolume(solidSmallBone, boneMat, "logicSmallBone");
+    new G4PVPlacement(nullptr, posSmallBone1, logicSmallBone, "physSmallBone1", logicWorld, false, 0, true);
+    new G4PVPlacement(nullptr, posSmallBone2, logicSmallBone, "physSmallBone2", logicWorld, false, 1, true);
+    new G4PVPlacement(nullptr, posSmallBone3, logicSmallBone, "physSmallBone3", logicWorld, false, 2, true);
+
+    // Tumors behind small bones: y-extent = 1x, 1.5x, 2x the small bone height
+    const G4ThreeVector posSmallTumor1 = posSmallBone1 + G4ThreeVector(0,0,tumorOffset);
+    const G4ThreeVector posSmallTumor2 = posSmallBone2 + G4ThreeVector(0,0,tumorOffset);
+    const G4ThreeVector posSmallTumor3 = posSmallBone3 + G4ThreeVector(0,0,tumorOffset);
+
+    auto solidSmallTumor1 = new G4Ellipsoid("solidSmallTumor1", xTumor, 1.0*smallBoneHalfY, zTumor);
+    auto logicSmallTumor1 = new G4LogicalVolume(solidSmallTumor1, tumorMat, "logicSmallTumor1");
+    new G4PVPlacement(nullptr, posSmallTumor1, logicSmallTumor1, "physSmallTumor1", logicWorld, false, 0, true);
+
+    auto solidSmallTumor2 = new G4Ellipsoid("solidSmallTumor2", xTumor, 1.5*smallBoneHalfY, zTumor);
+    auto logicSmallTumor2 = new G4LogicalVolume(solidSmallTumor2, tumorMat, "logicSmallTumor2");
+    new G4PVPlacement(nullptr, posSmallTumor2, logicSmallTumor2, "physSmallTumor2", logicWorld, false, 0, true);
+
+    auto solidSmallTumor3 = new G4Ellipsoid("solidSmallTumor3", xTumor, 2.0*smallBoneHalfY, zTumor);
+    auto logicSmallTumor3 = new G4LogicalVolume(solidSmallTumor3, tumorMat, "logicSmallTumor3");
+    new G4PVPlacement(nullptr, posSmallTumor3, logicSmallTumor3, "physSmallTumor3", logicWorld, false, 0, true);
+
+
     // Lung slab (behind the bones and tumors)
     const G4double lungHalfZ = 0.025*m;
     const G4double zLung = posTumor1.z() + zTumor + lungHalfZ;      // front face touches back of tumors (z = 99.5 mm)
@@ -204,6 +237,11 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     logicTumor1->SetVisAttributes(tumorVis);
     logicTumor2->SetVisAttributes(tumorVis);
     logicTumor3->SetVisAttributes(tumorVis);
+    logicSmallTumor1->SetVisAttributes(tumorVis);
+    logicSmallTumor2->SetVisAttributes(tumorVis);
+    logicSmallTumor3->SetVisAttributes(tumorVis);
+
+    logicSmallBone->SetVisAttributes(bone1Vis);
 
 
     // // Sensitive detector
