@@ -16,7 +16,7 @@ public:
 
 private:
     MyPrimaryGenerator*        fGenerator;
-    G4UIcmdWithADoubleAndUnit* fAngleCmd;
+    G4UIcmdWithADoubleAndUnit* fPositionCmd;
 };
 
 #endif

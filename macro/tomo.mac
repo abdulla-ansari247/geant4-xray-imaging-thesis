@@ -1,7 +1,8 @@
-# Tomosynthesis acquisition: 3 angular positions in the Y-Z plane.
-#   0 deg  = frontal (standard PA view)
-#  +30 deg = source up (+Y), beam tilted downward
-#  -30 deg = source down (-Y), beam tilted upward
+# Tomosynthesis acquisition: 5 source positions along Y (source plane z = -15 cm).
+# At each position the tube tilts so its axis points at the imaginary focal point
+# (0, 0, 102.5 mm). Tube angle from the z-axis = atan(y / 252.5 mm):
+#   -20 cm -> -38.4 deg   -10 cm -> -21.6 deg   0 cm -> 0 deg
+#   +10 cm -> +21.6 deg   +20 cm -> +38.4 deg
 #
 # Run from build/: ./sim tomo.mac
 # Output files land in the project root (one level above build/).
@@ -10,17 +11,27 @@
 /control/execute init.mac
 /run/printProgress 100000
 
-# --- Shot 1: frontal (0 degrees) ---
-/gun/angleY 0 deg
-/sim/outputFile ../results/raw/xray_image_0deg.dat
-/run/beamOn 50000000
+# --- Shot 1: y = -20 cm ---
+/gun/positionY -20 cm
+/sim/outputFile ../results/raw/xray_image_-20cm.dat
+/run/beamOn 1000000
 
-# --- Shot 2: source up (+30 degrees) ---
-#/gun/angleY 30 deg
-#/sim/outputFile ../results/raw/xray_image_+30deg.dat
-#/run/beamOn 50000000
+# --- Shot 2: y = -10 cm ---
+/gun/positionY -10 cm
+/sim/outputFile ../results/raw/xray_image_-10cm.dat
+/run/beamOn 1000000
 
-# --- Shot 3: source down (-30 degrees) ---
-#/gun/angleY -30 deg
-#/sim/outputFile ../results/raw/xray_image_-30deg.dat
-#/run/beamOn 50000000
+# --- Shot 3: frontal (0 cm) ---
+/gun/positionY 0 cm
+/sim/outputFile ../results/raw/xray_image_0cm.dat
+/run/beamOn 1000000
+
+# --- Shot 4: y = +10 cm ---
+/gun/positionY 10 cm
+/sim/outputFile ../results/raw/xray_image_+10cm.dat
+/run/beamOn 1000000
+
+# --- Shot 5: y = +20 cm ---
+/gun/positionY 20 cm
+/sim/outputFile ../results/raw/xray_image_+20cm.dat
+/run/beamOn 1000000

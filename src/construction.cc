@@ -73,9 +73,10 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     const G4double gap = 2.0*mm;
     const G4double dx = 2.0*boneHalfX + gap;   // 0.062 m
 
+    // Order along x: Bone 1 (left), Bone 3 dog bone (centre), Bone 2 hollow (right)
     const G4ThreeVector posBone1(-dx, 0, zBone);
-    const G4ThreeVector posBone2( 0 , 0, zBone);
-    const G4ThreeVector posBone3(+dx, 0, zBone);
+    const G4ThreeVector posBone2(+dx, 0, zBone);
+    const G4ThreeVector posBone3( 0 , 0, zBone);
 
     // ---------- Bone 1: normal rectangular ----------
     auto solidBone1 = new G4Box("solidBone1", 0.03*m, 0.03*m, boneHalfZ); // 6x6x1.5 cm

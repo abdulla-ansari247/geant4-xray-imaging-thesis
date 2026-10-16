@@ -2,5 +2,8 @@ Increase detector screen (try adjusting only after seeing tumor, be careful of t
 5x shots at 10m runs making tomography (angle gun)
 Make everything a bit closer
 
+Possibly adjust size of tumor
 
 Email him with pictures
+
+Add skin behind lung
