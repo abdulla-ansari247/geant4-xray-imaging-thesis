@@ -1,0 +1,20 @@
+# Tomosynthesis acquisition, outer positions only: y = -20 cm and +20 cm
+# (source plane z = -15 cm), 25M photons each.
+# Tube angle from the z-axis = atan(y / 252.5 mm): -20 cm -> -38.4 deg, +20 cm -> +38.4 deg
+#
+# Run from build/: ./sim tomo2.mac
+# Output files land in results/raw/ (one level above build/).
+
+/sim/notify true
+/control/execute init.mac
+/run/printProgress 100000
+
+# --- Shot 1: y = -20 cm ---
+/gun/positionY -20 cm
+/sim/outputFile ../results/raw/xray_image_-20cm.dat
+/run/beamOn 25000000
+
+# --- Shot 2: y = +20 cm ---
+/gun/positionY 20 cm
+/sim/outputFile ../results/raw/xray_image_+20cm.dat
+/run/beamOn 25000000

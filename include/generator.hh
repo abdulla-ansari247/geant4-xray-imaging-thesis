@@ -29,7 +29,7 @@ private:
     const G4double fSID   =  0.15  * m;    // source plane sits at z = -fSID
     const G4double fZdet  =  0.240 * m;    // detector plane z
     const G4double fHalfX =  0.245 * m;    // half-size of active field in X (≈ 49 cm width)
-    const G4double fHalfY =  0.31  * m;    // half-size of active field in Y (wider: the aimed beam
+    const G4double fHalfY =  0.245  * m;    // half-size of active field in Y (wider: the aimed beam
                                            // must still cover the whole detector at y = +-20 cm)
     const G4double fDetHalf = 0.20 * m;    // detector half-size (160 px * 2.5 mm / 2)
     const G4double fSpotR =  0.5   * mm;   // focal spot radius
