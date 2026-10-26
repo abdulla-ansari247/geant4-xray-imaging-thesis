@@ -12,7 +12,7 @@
 # --- Shot 1: y = -20 cm ---
 /gun/positionY -20 cm
 /sim/outputFile ../results/raw/xray_image_-20cm.dat
-/run/beamOn 25000000
+/run/beamOn 75000000
 
 # --- Shot 2: y = +20 cm ---
 /gun/positionY 20 cm
