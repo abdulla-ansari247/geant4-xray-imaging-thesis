@@ -69,7 +69,7 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
 
     // Spacing: bone full width is 0.06 m, add 2 mm gap
     const G4double boneHalfX = 0.03*m;
-    const G4double boneHalfZ = 7.5*mm;          // 15 mm thick (was 3 mm -> 6 mm)
+    const G4double boneHalfZ = 3*mm;          // was 7.5 (blocked tumor) then 5
     const G4double gap = 2.0*mm;
     const G4double dx = 2.0*boneHalfX + gap;   // 0.062 m
 
@@ -163,23 +163,43 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     const G4ThreeVector posTumor3 = posBone3 + G4ThreeVector(0,0,tumorOffset);
 
 
-    // Tumor 1 (left): cross / plus sign in x-y, same depth as the others
-    const G4double crossHalfLen = 6.0*mm;      // 12 mm arm-to-arm
-    const G4double crossHalfWidth = 2.0*mm;    // 4 mm wide arms
-    auto crossArmX = new G4Box("crossArmX", crossHalfLen, crossHalfWidth, zTumor);
-    auto crossArmY = new G4Box("crossArmY", crossHalfWidth, crossHalfLen, zTumor);
-    auto solidTumor1 = new G4UnionSolid("solidTumor1", crossArmX, crossArmY, nullptr, G4ThreeVector(0,0,0));
+    // ---------- OLD tumors (cross / sphere / ellipsoid) ----------
+    // // Tumor 1 (left): cross / plus sign in x-y, same depth as the others
+    // const G4double crossHalfLen = 6.0*mm;      // 12 mm arm-to-arm
+    // const G4double crossHalfWidth = 2.0*mm;    // 4 mm wide arms
+    // auto crossArmX = new G4Box("crossArmX", crossHalfLen, crossHalfWidth, zTumor);
+    // auto crossArmY = new G4Box("crossArmY", crossHalfWidth, crossHalfLen, zTumor);
+    // auto solidTumor1 = new G4UnionSolid("solidTumor1", crossArmX, crossArmY, nullptr, G4ThreeVector(0,0,0));
+    // auto logicTumor1 = new G4LogicalVolume(solidTumor1, tumorMat, "logicTumor1");
+    // new G4PVPlacement(nullptr, posTumor1, logicTumor1, "physTumor1", logicWorld, false, 0, true);
+    //
+    // // Tumor 2 (right): sphere, radius = zTumor so it fills the same depth slot
+    // auto solidTumor2 = new G4Orb("solidTumor2", zTumor);
+    // auto logicTumor2 = new G4LogicalVolume(solidTumor2, tumorMat, "logicTumor2");
+    // new G4PVPlacement(nullptr, posTumor2, logicTumor2, "physTumor2", logicWorld, false, 0, true);
+    //
+    // auto solidTumor3 = new G4Ellipsoid("solidTumor3", xTumor, yTumor, zTumor);
+    // auto logicTumor3 = new G4LogicalVolume(solidTumor3, tumorMat, "logicTumor3");
+    // new G4PVPlacement(nullptr, posTumor3, logicTumor3, "physTumor3", logicWorld, false, 0, true);
+
+    // ---------- Spherical tumors ----------
+    // Each sphere touches the back face of its bone (centre at boneHalfZ + r).
+    // zTumor (6 mm) is still the depth slot, so the lung position is unchanged.
+    const G4double rTumor1 = 6.0*mm;   // left
+    const G4double rTumor2 = 4.5*mm;   // right
+    const G4double rTumor3 = 3.0*mm;   // centre
+
+    auto solidTumor1 = new G4Orb("solidTumor1", rTumor1);
     auto logicTumor1 = new G4LogicalVolume(solidTumor1, tumorMat, "logicTumor1");
-    new G4PVPlacement(nullptr, posTumor1, logicTumor1, "physTumor1", logicWorld, false, 0, true);
+    new G4PVPlacement(nullptr, posBone1 + G4ThreeVector(0,0,boneHalfZ + rTumor1), logicTumor1, "physTumor1", logicWorld, false, 0, true);
 
-    // Tumor 2 (right): sphere, radius = zTumor so it fills the same depth slot
-    auto solidTumor2 = new G4Orb("solidTumor2", zTumor);
+    auto solidTumor2 = new G4Orb("solidTumor2", rTumor2);
     auto logicTumor2 = new G4LogicalVolume(solidTumor2, tumorMat, "logicTumor2");
-    new G4PVPlacement(nullptr, posTumor2, logicTumor2, "physTumor2", logicWorld, false, 0, true);
+    new G4PVPlacement(nullptr, posBone2 + G4ThreeVector(0,0,boneHalfZ + rTumor2), logicTumor2, "physTumor2", logicWorld, false, 0, true);
 
-    auto solidTumor3 = new G4Ellipsoid("solidTumor3", xTumor, yTumor, zTumor);
+    auto solidTumor3 = new G4Orb("solidTumor3", rTumor3);
     auto logicTumor3 = new G4LogicalVolume(solidTumor3, tumorMat, "logicTumor3");
-    new G4PVPlacement(nullptr, posTumor3, logicTumor3, "physTumor3", logicWorld, false, 0, true);
+    new G4PVPlacement(nullptr, posBone3 + G4ThreeVector(0,0,boneHalfZ + rTumor3), logicTumor3, "physTumor3", logicWorld, false, 0, true);
 
 
     // ===== Small bones (3 above the main bones, same thickness) =====

@@ -11,27 +11,35 @@
 /control/execute init.mac
 /run/printProgress 100000
 
-# --- Shot 1: y = -20 cm ---
 /gun/positionY -20 cm
 /sim/outputFile ../results/raw/xray_image_-20cm.dat
-/run/beamOn 15000000
+/run/beamOn 5000000
+
+# --- Shot 1: y = -20 cm ---
+/gun/positionY -15 cm
+/sim/outputFile ../results/raw/xray_image_-15cm.dat
+/run/beamOn 5000000
 
 # --- Shot 2: y = -10 cm ---
 /gun/positionY -10 cm
 /sim/outputFile ../results/raw/xray_image_-10cm.dat
-/run/beamOn 15000000
+/run/beamOn 5000000
 
 # --- Shot 3: frontal (0 cm) ---
 /gun/positionY 0 cm
 /sim/outputFile ../results/raw/xray_image_0cm.dat
-/run/beamOn 15000000
+/run/beamOn 5000000
 
 # --- Shot 4: y = +10 cm ---
 /gun/positionY 10 cm
 /sim/outputFile ../results/raw/xray_image_+10cm.dat
-/run/beamOn 15000000
+/run/beamOn 5000000
 
 # --- Shot 5: y = +20 cm ---
+/gun/positionY 15 cm
+/sim/outputFile ../results/raw/xray_image_+15cm.dat
+/run/beamOn 5000000
+
 /gun/positionY 20 cm
 /sim/outputFile ../results/raw/xray_image_+20cm.dat
-/run/beamOn 15000000
+/run/beamOn 5000000
