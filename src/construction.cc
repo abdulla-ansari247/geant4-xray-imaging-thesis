@@ -185,9 +185,9 @@ G4VPhysicalVolume *MyDetectorConstruction::Construct()
     // ---------- Spherical tumors ----------
     // Each sphere touches the back face of its bone (centre at boneHalfZ + r).
     // zTumor (6 mm) is still the depth slot, so the lung position is unchanged.
-    const G4double rTumor1 = 6.0*mm;   // left
-    const G4double rTumor2 = 4.5*mm;   // right
-    const G4double rTumor3 = 3.0*mm;   // centre
+    const G4double rTumor1 = 7.0*mm;   // left
+    const G4double rTumor2 = 3.5*mm;   // right
+    const G4double rTumor3 = 5.5*mm;   // centre
 
     auto solidTumor1 = new G4Orb("solidTumor1", rTumor1);
     auto logicTumor1 = new G4LogicalVolume(solidTumor1, tumorMat, "logicTumor1");

@@ -6,7 +6,10 @@ Steps
 -----
 1. 0 cm shot: the tumours sit directly behind the bone shafts, so only the
    bones are seen. Trace the outline of every bone (x, y on the detector)
-   and save it to bone_outline_0cm.csv.
+   and save it to bone_outline_0cm.csv. Two cuts are used: a tight one
+   (EDGE_CUT) that sits on the real bone edge for the saved/plotted outlines,
+   and a looser one (OUTLINE_CUT) that also catches the faint tumour, used
+   for steps 3-6.
 2. Angled shot: trace the outline of whatever is seen there. Moving the gun
    to -20 cm moves the bone shadow on the detector, and because the bone is
    6 mm thick and the rays now cross it on a slant, the outline is also a
@@ -18,15 +21,18 @@ Steps
 4. Move the 0 cm outline by that shift/stretch. That is where the bone alone
    should be in the angled shot. Anything in the angled outline that sticks
    out past it is the extra part: the tumour, seen from the side.
-5. Fit the shadow of a sphere (a circle, stretched in y by 1/cos(angle)) to
-   the extra part -> tumour radius and centre on the detector.
+5. Width of the extra part: (number of columns) x pixel size. At a steep
+   gun angle the tumour slides fully out from behind the bone, so this width
+   is the tumour's diameter on the detector; half of it is the radius.
+   (How far the bump sticks out is NOT used: the tumour's faint rim makes
+   that badly measured.)
 6. Undo the gun displacement with the same calculation as for the bone. A
    point at depth z moves by  shift = y_src * (1 - M(z))  on the detector when
    the gun moves from 0 to y_src, where M(z) is the magnification. The bone's
-   shift gives the bone's M. The tumour was hidden behind the bone at 0 cm,
-   so it started at the bone's position; its own shift gives the tumour's M
-   (and depth z). Dividing the detector radius by that M gives the real
-   radius.
+   shift gives the bone's M; the tumour sits right behind the bone, so the
+   same M is used. Detector radius / M = real radius.
+   Works best at the steepest shots (+-20 cm). At smaller angles part of the
+   tumour is still hidden and the radius comes out too small.
 
 Usage:  python3 analyze.py                    (0cm vs -20cm)
         python3 analyze.py --shot ../raw/xray_image_+20cm.dat
@@ -39,7 +45,6 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter, median_filter, label
-from scipy.optimize import least_squares
 
 # ---------------------------------------------------------------------------
 # Geometry (mm) - keep in sync with construction.cc / generator.hh
@@ -55,14 +60,15 @@ Z_BONE = 80.0       # bone centre plane (only used for the "expected" printout)
 SMOOTH_SIGMA = 1.0  # Gaussian smoothing (pixels) against noise
 BG_SIZE = 41        # box (pixels) for the local background estimate
 BONE_CUT = 0.75     # relative intensity below this = bone core (used to find bones)
-OUTLINE_CUT = 0.93  # relative intensity below this = "something is there" (outline)
+EDGE_CUT = 0.85     # bone outline (saved/plotted): halfway between background (1.0)
+                    # and bone (~0.68), so it sits on the real bone edge
+OUTLINE_CUT = 0.93  # tumour search: below this = "something is there". Looser than
+                    # EDGE_CUT because the tumour bump is faint (~0.8-0.9)
 EXTRA_TOL = 0.5     # pixels the angled outline must stick out to count as extra
 MIN_EXTRA_COLS = 3  # at least this many neighbouring columns for a tumour
-FIT_PAD = 6         # flat columns either side of the bump included in the fit
 
-# Bones ordered by x, with the true radii from construction.cc (only for printing the error)
+# Bones ordered by x
 BONE_NAMES = ["left", "centre", "right"]
-TRUE_R = {"left": 6.0, "centre": 3.0, "right": 4.5}
 
 
 # ---------------------------------------------------------------------------
@@ -116,19 +122,19 @@ def find_bones(rel):
     return sorted(boxes)
 
 
-def crossing(rel, col, i_in, i_out):
-    """Sub-pixel row where rel crosses OUTLINE_CUT between rows i_in (inside)
+def crossing(rel, col, i_in, i_out, cut):
+    """Sub-pixel row where rel crosses `cut` between rows i_in (inside)
     and i_out (outside), by linear interpolation."""
     a, b = rel[i_in, col], rel[i_out, col]
-    t = (OUTLINE_CUT - a) / (b - a) if b != a else 0.5
+    t = (cut - a) / (b - a) if b != a else 0.5
     return i_in + t * (i_out - i_in)
 
 
-def column_edges(rel, cols, row_lo, row_hi, pad=15):
+def column_edges(rel, cols, row_lo, row_hi, cut, pad=15):
     """Outline of one object, column by column.
 
     For each column, start at the darkest pixel of the bone core and walk
-    down and up while the pixel is still below OUTLINE_CUT. The two crossing
+    down and up while the pixel is still below `cut`. The two crossing
     points are the lower and upper edge. Anything touching the bone (like a
     tumour) is therefore included; separate noise specks are not.
     Returns arrays (low_edge, high_edge) in fractional rows.
@@ -140,16 +146,16 @@ def column_edges(rel, cols, row_lo, row_hi, pad=15):
     for k, c in enumerate(cols):
         seg = rel[r0:r1 + 1, c]
         start = r0 + int(np.argmin(seg))
-        if rel[start, c] >= OUTLINE_CUT:
+        if rel[start, c] >= cut:
             continue
         i = start
-        while i - 1 >= 0 and rel[i - 1, c] < OUTLINE_CUT:
+        while i - 1 >= 0 and rel[i - 1, c] < cut:
             i -= 1
-        low[k] = crossing(rel, c, i, i - 1) if i > 0 else i
+        low[k] = crossing(rel, c, i, i - 1, cut) if i > 0 else i
         j = start
-        while j + 1 < n and rel[j + 1, c] < OUTLINE_CUT:
+        while j + 1 < n and rel[j + 1, c] < cut:
             j += 1
-        high[k] = crossing(rel, c, j, j + 1) if j < n - 1 else j
+        high[k] = crossing(rel, c, j, j + 1, cut) if j < n - 1 else j
     return low, high
 
 
@@ -185,9 +191,13 @@ def analyse_bone(name, rel0, rel1, box0, box1, y_src):
     c_lo, c_hi = box0[0], box0[1]
     cols = np.arange(c_lo, c_hi + 1)      # x does not change when the gun moves in y
 
-    # 1 + 2: outlines in both shots
-    low0, high0 = column_edges(rel0, cols, box0[2], box0[3])
-    low1, high1 = column_edges(rel1, cols, box1[2], box1[3])
+    # 1 + 2: outlines in both shots.
+    # Tight outline (EDGE_CUT): on the real bone edge, for saving and plotting.
+    edge_low0, edge_high0 = column_edges(rel0, cols, box0[2], box0[3], EDGE_CUT)
+    edge_low1, edge_high1 = column_edges(rel1, cols, box1[2], box1[3], EDGE_CUT)
+    # Loose outline (OUTLINE_CUT): includes the faint tumour, used for steps 3-6.
+    low0, high0 = column_edges(rel0, cols, box0[2], box0[3], OUTLINE_CUT)
+    low1, high1 = column_edges(rel1, cols, box1[2], box1[3], OUTLINE_CUT)
 
     # 3: how the bone changed (median over columns ignores the tumour columns)
     d_low = np.nanmedian(low1 - low0)
@@ -208,6 +218,10 @@ def analyse_bone(name, rel0, rel1, box0, box1, y_src):
         side, run, edge1, pred = "above", run_high, high1, pred_high
 
     res = dict(name=name, cols=cols, low0=low0, high0=high0, low1=low1, high1=high1,
+               edge_low0=edge_low0, edge_high0=edge_high0,
+               edge_low1=edge_low1, edge_high1=edge_high1,
+               edge_pred_low=edge_low0 + np.nanmedian(edge_low1 - edge_low0),
+               edge_pred_high=edge_high0 + np.nanmedian(edge_high1 - edge_high0),
                pred_low=pred_low, pred_high=pred_high, side=side, run=run,
                bone_shift_mm=bone_shift_px * PITCH, bone_stretch_mm=bone_stretch_px * PITCH)
 
@@ -221,54 +235,15 @@ def analyse_bone(name, rel0, rel1, box0, box1, y_src):
         return res
     res["found"] = True
 
-    # 5: fit the extra part. A sphere's shadow is an ellipse: half-width a in x
-    # and a / cos(angle) in y (stretched because the rays arrive at an angle).
-    # The angled outline should be the moved bone outline with that ellipse
-    # sticking out of it. Fit the ellipse centre (xc, yc) and a so that this
-    # matches the measured outline over the bump AND a few flat columns on
-    # either side (those pin down where the bump starts and ends).
-    below = side == "below"
-    sl = np.arange(max(run[0] - FIT_PAD, 0), min(run[-1] + FIT_PAD + 1, len(cols)))
-    sl = sl[np.isfinite(edge1[sl]) & np.isfinite(pred[sl])]
-    x = pix_to_mm(cols[sl])
-    e_meas = pix_to_mm(edge1[sl])
-    e_bone = pix_to_mm(pred[sl])
-    sign = -1.0 if below else 1.0
-
-    def model(p):
-        xc, yc, a = p
-        cosa = np.cos(np.arctan((yc - y_src) / (Z_DET - Z_SOURCE)))
-        u = np.clip(1.0 - ((x - xc) / a) ** 2, 0.0, None)
-        tip = yc + sign * (a / cosa) * np.sqrt(u)
-        outer = np.minimum(tip, e_bone) if below else np.maximum(tip, e_bone)
-        return np.where(u > 0, outer, e_bone)
-
-    # The tumour was hidden at 0 cm, so its shadow (same size at 0 cm) is no
-    # bigger than half the bone shaft height there: use that as the upper limit.
-    shaft_half = 0.5 * PITCH * np.nanmedian((high0 - low0)[run])
+    # 5: width of the extra part = tumour diameter on the detector
+    width_det = len(run) * PITCH
+    R_det = 0.5 * width_det
     x_mid = pix_to_mm(cols[run]).mean()
-    tip_meas = e_meas.min() if below else e_meas.max()
-    best = None
-    for a0 in np.arange(2.0, shaft_half, 1.0):           # several starting sizes
-        p0 = [x_mid, tip_meas - sign * a0 / 0.77, a0]
-        fit = least_squares(lambda p: model(p) - e_meas, p0,
-                            bounds=([x[0], -400, 1.0], [x[-1], 400, shaft_half]))
-        if best is None or fit.cost < best.cost:
-            best = fit
-    xc, yc, a = best.x
-    angle = np.arctan((yc - y_src) / (Z_DET - Z_SOURCE))
 
-    # 6: undo the gun displacement. At 0 cm the tumour hid behind the bone
-    # centre, so its 0 cm position is the bone centre. Same formula as the bone:
-    # shift = y_src (1 - M)  ->  M of the tumour  ->  depth and real radius.
-    y_bone0_mm = pix_to_mm(np.nanmedian(0.5 * (low0 + high0)))
-    tumour_shift = yc - y_bone0_mm
-    M_t = 1.0 - tumour_shift / y_src
-    res.update(xc_det=xc, yc_det=yc, R_det=a, angle_deg=np.degrees(angle),
-               tumour_shift_mm=tumour_shift, M_tumour=M_t,
-               z_tumour=depth_from_magnification(M_t),
-               radius_mm=a / M_t,
-               x_tumour=xc / M_t,
+    # 6: undo the gun displacement / magnification with the bone's M
+    res.update(width_det_mm=width_det, R_det=R_det,
+               radius_mm=R_det / M_bone,
+               x_tumour=x_mid / M_bone,
                x_arc=pix_to_mm(cols[run]), y_arc=pix_to_mm(edge1[run]))
     return res
 
@@ -284,22 +259,18 @@ def plot(results, rel0, rel1, shot_label, out_path):
             ax = axes[i, j]
             ax.imshow(rel, cmap="gray", origin="lower", vmin=0.4, vmax=1.1, extent=ext)
             if i == 0:
-                ax.plot(x, pix_to_mm(r["low0"]), "c-", lw=1, label="bone outline 0cm")
-                ax.plot(x, pix_to_mm(r["high0"]), "c-", lw=1)
+                ax.plot(x, pix_to_mm(r["edge_low0"]), "c-", lw=1, label="bone outline 0cm")
+                ax.plot(x, pix_to_mm(r["edge_high0"]), "c-", lw=1)
                 yc = np.nanmedian(pix_to_mm(0.5 * (r["low0"] + r["high0"])))
             else:
-                ax.plot(x, pix_to_mm(r["pred_low"]), "c--", lw=1, label="0cm outline moved")
-                ax.plot(x, pix_to_mm(r["pred_high"]), "c--", lw=1)
-                ax.plot(x, pix_to_mm(r["low1"]), "y-", lw=1, label=f"outline {shot_label}")
-                ax.plot(x, pix_to_mm(r["high1"]), "y-", lw=1)
+                ax.plot(x, pix_to_mm(r["edge_pred_low"]), "c--", lw=1, label="0cm outline moved")
+                ax.plot(x, pix_to_mm(r["edge_pred_high"]), "c--", lw=1)
+                ax.plot(x, pix_to_mm(r["edge_low1"]), "y-", lw=1, label=f"outline {shot_label}")
+                ax.plot(x, pix_to_mm(r["edge_high1"]), "y-", lw=1)
                 yc = np.nanmedian(pix_to_mm(0.5 * (r["pred_low"] + r["pred_high"])))
                 if r["found"]:
                     ax.plot(r["x_arc"], r["y_arc"], "r.", ms=4, label="extra part")
-                    t = np.linspace(0, 2 * np.pi, 200)
-                    cosa = np.cos(np.radians(r["angle_deg"]))
-                    ax.plot(r["xc_det"] + r["R_det"] * np.cos(t),
-                            r["yc_det"] + r["R_det"] / cosa * np.sin(t), "r-", lw=1)
-                    ax.set_xlabel(f"r = {r['radius_mm']:.2f} mm (true {TRUE_R[name]})")
+                    ax.set_xlabel(f"r = {r['radius_mm']:.2f} mm")
             ax.set_xlim(x[0] - 8, x[-1] + 8)
             ax.set_ylim(yc - 40, yc + 40)
             ax.set_title(f"{name} bone - {title}", fontsize=9)
@@ -331,24 +302,23 @@ if __name__ == "__main__":
     # Save outlines
     f0 = os.path.join(here, "bone_outline_0cm.csv")
     f1 = os.path.join(here, f"outline_{shot_label}.csv")
-    save_outline(f0, {n: (r["cols"], r["low0"], r["high0"]) for n, r in results.items()})
-    save_outline(f1, {n: (r["cols"], r["low1"], r["high1"]) for n, r in results.items()})
+    save_outline(f0, {n: (r["cols"], r["edge_low0"], r["edge_high0"]) for n, r in results.items()})
+    save_outline(f1, {n: (r["cols"], r["edge_low1"], r["edge_high1"]) for n, r in results.items()})
 
     # Report
     M_exp = magnification(Z_BONE)
     print(f"Gun moved 0 -> {y_src:+.0f} mm. Expected bone shift (z = {Z_BONE:.0f} mm): "
           f"{y_src * (1 - M_exp):+.1f} mm\n")
-    print(f"{'bone':>7} {'shift':>8} {'stretch':>8} {'z_bone':>7} | {'side':>6} "
-          f"{'R_det':>6} {'angle':>6} {'t.shift':>8} {'M_t':>6} {'z_t':>6} "
-          f"{'x_t':>6} {'r':>6} {'true':>5}")
+    print(f"{'bone':>7} {'shift':>8} {'stretch':>8} {'M_bone':>7} {'z_bone':>7} | "
+          f"{'side':>6} {'pixels':>6} {'width':>7} {'R_det':>7} {'x_t':>6} "
+          f"{'r':>7}")
     for name, r in results.items():
         line = (f"{name:>7} {r['bone_shift_mm']:7.1f}mm {r['bone_stretch_mm']:6.1f}mm "
-                f"{r['z_bone']:6.1f} | ")
+                f"{r['M_bone']:7.3f} {r['z_bone']:7.1f} | ")
         if r["found"]:
-            line += (f"{r['side']:>6} {r['R_det']:5.1f}mm {r['angle_deg']:5.1f}° "
-                     f"{r['tumour_shift_mm']:7.1f}mm {r['M_tumour']:6.3f} "
-                     f"{r['z_tumour']:6.1f} {r['x_tumour']:6.1f} "
-                     f"{r['radius_mm']:5.2f}mm {TRUE_R[name]:5.1f}")
+            line += (f"{r['side']:>6} {len(r['run']):6d} {r['width_det_mm']:5.1f}mm "
+                     f"{r['R_det']:5.2f}mm {r['x_tumour']:6.1f} "
+                     f"{r['radius_mm']:5.2f}mm")
         else:
             line += "no extra part found"
         print(line)

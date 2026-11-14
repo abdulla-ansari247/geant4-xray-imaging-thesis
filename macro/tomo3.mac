@@ -1,0 +1,18 @@
+/sim/notify true
+/control/execute init.mac
+/run/printProgress 100000
+
+# --- Shot 1: y = -20 cm ---
+/gun/positionY -20 cm
+/sim/outputFile ../results/raw/xray_image_-20cm_test.dat
+/run/beamOn 30000000
+
+# --- Shot 2: y = 0 cm ---
+/gun/positionY 0 cm
+/sim/outputFile ../results/raw/xray_image_0cm_test.dat
+/run/beamOn 30000000
+
+# --- Shot 1: y = +20 cm ---
+/gun/positionY 20 cm
+/sim/outputFile ../results/raw/xray_image_+20cm_test.dat
+/run/beamOn 30000000
