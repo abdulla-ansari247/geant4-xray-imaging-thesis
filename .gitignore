@@ -11,7 +11,8 @@ MyRunMessenger.hh
 MyRunMessenger.cc
 
 # results
-results/
+results/*
+!results/analysis_for_tumor
 Notes.txt
 
 # compiled objects
