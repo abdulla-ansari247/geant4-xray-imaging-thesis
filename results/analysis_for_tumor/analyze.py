@@ -75,9 +75,15 @@ BONE_NAMES = ["left", "centre", "right"]
 # Helpers
 # ---------------------------------------------------------------------------
 def source_y_from_name(path):
-    """xray_image_-20cm.dat -> -200.0 (source y in mm)."""
-    m = re.search(r"_([+-]?\d+(?:\.\d+)?)cm\.dat$", path)
+    """xray_image_-20cm_test.dat -> -200.0 (source y in mm)."""
+    m = re.search(r"_([+-]?\d+(?:\.\d+)?)cm(_\w+)?\.dat$", path)
     return float(m.group(1)) * 10.0
+
+
+def shot_suffix(path):
+    """xray_image_-20cm_test.dat -> "_test" ("" if there is no suffix)."""
+    m = re.search(r"cm(_\w+)?\.dat$", path)
+    return m.group(1) or ""
 
 
 def pix_to_mm(p):
@@ -290,7 +296,7 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     y_src = source_y_from_name(args.shot)
-    shot_label = f"{y_src / 10:+.0f}cm"
+    shot_label = f"{y_src / 10:+.0f}cm{shot_suffix(args.shot)}"
     rel0 = load_relative(args.ref)
     rel1 = load_relative(args.shot)
 
